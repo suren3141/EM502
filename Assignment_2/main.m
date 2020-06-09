@@ -1,24 +1,23 @@
-%% Variable parameters
-
 clear all;
 close all;
 
-k = 36; %k value for f_con == k-x(2)^2-(x(1)-5)^2
+%% Variable parameters
 
-% Visually estimated local minima and other stationary points
-MIN=[-2.8, 3.1; -3.8, -3.2; 3.6, -2; 3, 2];
-STAT =[-3, 0; 0, 2.8; -.15, -1; 3.4, 0];
+k = 36; %k value for f_con == k-x(2)^2-(x(1)-5)^2
 
 % Initial values
 x0 = [1,4];
+
+% Optimization function
+fun_opt = @(x)f_obj(x);
 
 % Constraint function 
 %fun_con = @(x)f_con(x,k);
 fun_con = @(x)f_con_new(x);
 
 % Feasbile variable (x1, x2) range
-X_min = -6;
-Y_min = -6;
+x1_min = -6;
+x2_min = -6;
 
 % Graph Size
 x_min = -6; x_max = 6;
@@ -32,6 +31,9 @@ con_line= 200;  % number of contour lines
 %marker_size =  12;   % Marker size
 eps=10^-6;
 
+X_min = x1_min;
+Y_min = x2_min;
+
 % Graph range
 X1 = x_min:.2:x_max;
 X2 = y_min:.2:y_max;
@@ -41,7 +43,7 @@ X2 = y_min:.2:y_max;
 l1 = length(X1);
 l2 = length(X2);
 
-z = myeval(@(x)f_obj(x), X, Y);
+z = myeval(fun_opt, X, Y);
 
 z_con = myeval(fun_con, X, Y);
 
@@ -61,6 +63,11 @@ f_region = fun_con([xx, yy]);
 
 %% Problem formulation plots
 
+% Visually estimated local minima and other stationary points
+MIN=[-2.8, 3.1; -3.8, -3.2; 3.6, -2; 3, 2];
+STAT =[-3, 0; 0, 2.8; -.15, -1; 3.4, 0];
+
+
 if X_min <=x_min
     x_min_ = X_min-eps;
 else
@@ -76,7 +83,7 @@ end
 x_fill = [x_min_, x_max, x_max, X_min, X_min, x_min_];
 y_fill = [y_min_, y_min_, Y_min, Y_min, y_max, y_max];
 
-%FIG0 - Cons 3D
+%FIG1 - Cons 3D
 figure;
 hold on
 mesh(X, Y, z_con);
@@ -100,9 +107,9 @@ if abs(fill_(1,1) - fill_(end, 1)) > 0.0001
 end
 x_fill_ = fill_(:, 1)'; y_fill_ = fill_(:, 2)';
 
-zp0 = myeval(@(x)f_obj(x), xp0, yp0);
-zp1 = myeval(@(x)f_obj(x), xp1, yp1);
-zp2 = myeval(@(x)f_obj(x), xp2, yp2);
+zp0 = myeval(fun_opt, xp0, yp0);
+zp1 = myeval(fun_opt, xp1, yp1);
+zp2 = myeval(fun_opt, xp2, yp2);
 
 
 %FIG2 - 2D
@@ -115,14 +122,14 @@ h2b = fill(x_fill, y_fill, 'k');
 set(h2b,'facealpha',alpha)
 hold off
 
-%FIG1 - 3D
+%FIG3 - 3D
 figure;
 hold on
 mesh(X, Y, z);
 plot3(xp0, yp0, zp0, 'k', xp1, yp1, zp1, 'k', xp2, yp2, zp2, 'k', 'LineWidth',1.5, 'LineStyle','--');
 hold off
 
-%FIG3 - 2D
+%FIG4 - 2D
 figure;
 hold on
 plot(xp0, yp0,  'k', xp1, yp1, 'k', xp2, yp2, 'k', 'LineWidth',1.5, 'LineStyle','--');
@@ -159,7 +166,7 @@ ub = [];
 %x0 = [-2,-2];
 
 % options = optimoptions('fmincon','Display','iter');%,'Algorithm','sqp');
-[x_ans, fval, history, exitflag, output, lambda, grad, hessian] = myoptim(@f_obj, x0, A, b, Aeq, beq, lb, ub, fun_con);
+[x_ans, fval, history, exitflag, output, lambda, grad, hessian] = myoptim(fun_opt, x0, A, b, Aeq, beq, lb, ub, fun_con);
 
 disp(x_ans);
 disp(fval);
@@ -167,7 +174,7 @@ disp(fval);
 %% HISTORY
 
 history = [x0; history];
-f_history = myeval(@(x)f_obj(x), history(:, 1), history(:, 2)); 
+f_history = myeval(fun_opt, history(:, 1), history(:, 2)); 
 x_hist = history(1:end-1, 1);
 y_hist = history(1:end-1, 2);
 u_hist = history(2:end, 1) - x_hist;
